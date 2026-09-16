@@ -1,5 +1,3 @@
 # orbit-clock
 
-Zero-dependency orbital analog clock.
-
-(WIP — v1 incoming)
+Zero-dependency browser orbital analog clock. Work in progress.

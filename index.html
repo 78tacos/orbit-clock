@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta
+      name="description"
+      content="Orbit Clock — a zero-dependency orbital analog clock. Hours, minutes, and seconds as planets."
+    />
+    <title>Orbit Clock</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2306070d'/%3E%3Ccircle cx='32' cy='32' r='6' fill='%23ffd6a0'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23ff8c69' stroke-width='1.4'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%237ec8d4' stroke-width='1.4'/%3E%3Ccircle cx='32' cy='32' r='26' fill='none' stroke='%23e8c478' stroke-width='1.4'/%3E%3Ccircle cx='32' cy='6' r='2.4' fill='%23e8c478'/%3E%3Ccircle cx='50' cy='24' r='2' fill='%237ec8d4'/%3E%3Ccircle cx='44' cy='46' r='1.6' fill='%23ff8c69'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        --void: #06070d;
+        --ink: #ece7dc;
+        --muted: rgba(236, 231, 220, 0.62);
+        --gold: #e8c478;
+        --ice: #7ec8d4;
+        --ember: #ff8c69;
+        --sun: #ffd6a0;
+        --ring-gold: rgba(232, 196, 120, 0.38);
+        --ring-ice: rgba(126, 200, 212, 0.32);
+        --ring-ember: rgba(255, 140, 105, 0.3);
+        --glass: rgba(8, 10, 18, 0.45);
+        --hairline: rgba(236, 231, 220, 0.12);
+        font-family: "Avenir Next", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --void: #efe8dc;
+          --ink: #1c1710;
+          --muted: rgba(28, 23, 16, 0.58);
+          --ring-gold: rgba(154, 112, 32, 0.45);
+          --ring-ice: rgba(32, 108, 122, 0.4);
+          --ring-ember: rgba(176, 68, 40, 0.42);
+          --glass: rgba(255, 250, 242, 0.5);
+          --hairline: rgba(28, 23, 16, 0.12);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 700px at 50% -10%, rgba(92, 58, 140, 0.28), transparent 55%),
+          radial-gradient(900px 600px at 110% 80%, rgba(20, 70, 110, 0.22), transparent 50%),
+          radial-gradient(800px 500px at -10% 90%, rgba(120, 40, 50, 0.12), transparent 46%),
+          var(--void);
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .stars {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .star-layer {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        border-radius: 50%;
+        background: transparent;
+        left: 0;
+        top: 0;
+      }
+
+      .shell {
+        position: relative;
+        z-index: 1;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: clamp(1.25rem, 4vw, 3rem) 1.25rem 2rem;
+      }
+
+      .stage {
+        --size: min(86vmin, 640px);
+        width: var(--size);
+        display: grid;
+        justify-items: center;
+        gap: 1.35rem;
+      }
+
+      .mast {
+        text-align: center;
+        letter-spacing: 0.42em;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        color: var(--gold);
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      }
+
+      .clock {
+        --hours-inset: 7.5%;
+        --minutes-inset: 21.5%;
+        --seconds-inset: 35.5%;
+        width: var(--size);
+        height: var(--size);
+        position: relative;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 50% 42%, rgba(255, 214, 160, 0.08), transparent 34%),
+          radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 62%);
+        box-shadow:
+          inset 0 0 80px rgba(0, 0, 0, 0.28),
+          0 0 0 1px var(--hairline);
+      }
+
+      .orbit {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      .orbit-hours {
+        inset: var(--hours-inset);
+      }
+
+      .orbit-minutes {
+        inset: var(--minutes-inset);
+      }
+
+      .orbit-seconds {
+        inset: var(--seconds-inset);
+      }
+
+      .ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 1px solid transparent;
+      }
+
+      .orbit-hours .ring {
+        border-color: var(--ring-gold);
+        background: conic-gradient(
+          from -90deg,
+          rgba(232, 196, 120, 0.28) 0deg,
+          rgba(232, 196, 120, 0.28) var(--sweep, 0deg),
+          transparent var(--sweep, 0deg)
+        );
+      }
+
+      .orbit-minutes .ring {
+        border-color: var(--ring-ice);
+        background: conic-gradient(
+          from -90deg,
+          rgba(126, 200, 212, 0.22) 0deg,
+          rgba(126, 200, 212, 0.22) var(--sweep, 0deg),
+          transparent var(--sweep, 0deg)
+        );
+      }
+
+      .orbit-seconds .ring {
+        border-color: var(--ring-ember);
+        background: conic-gradient(
+          from -90deg,
+          rgba(255, 140, 105, 0.22) 0deg,
+          rgba(255, 140, 105, 0.22) var(--sweep, 0deg),
+          transparent var(--sweep, 0deg)
+        );
+      }
+
+      .ticks,
+      .numerals,
+      .rotor {
+        position: absolute;
+        inset: 0;
+      }
+
+      .tick,
+      .numeral {
+        position: absolute;
+        inset: 0;
+      }
+
+      .tick::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform: translateX(-50%);
+        width: 1px;
+        height: 7px;
+        background: currentColor;
+        opacity: 0.5;
+        border-radius: 1px;
+      }
+
+      .tick.major::before {
+        height: 11px;
+        width: 2px;
+        opacity: 0.88;
+      }
+
+      .orbit-hours .tick {
+        color: var(--gold);
+      }
+
+      .orbit-minutes .tick {
+        color: var(--ice);
+      }
+
+      .numeral {
+        font-size: clamp(0.62rem, 2.1vmin, 0.9rem);
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .numeral span {
+        position: absolute;
+        left: 50%;
+        top: 1.05em;
+        translate: -50% 0;
+      }
+
+      .rotor {
+        z-index: 3;
+      }
+
+      .planet {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        translate: -50% -50%;
+        border-radius: 50%;
+      }
+
+      .planet-hours {
+        width: 8.4%;
+        height: 8.4%;
+        background:
+          radial-gradient(circle at 32% 28%, #fff6d8 0 12%, #e8c478 38%, #b57a2c 100%);
+        box-shadow:
+          0 0 16px rgba(232, 196, 120, 0.55),
+          inset -6px -8px 12px rgba(80, 40, 0, 0.28);
+      }
+
+      .planet-hours::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 210%;
+        height: 52%;
+        border: 1.5px solid rgba(232, 196, 120, 0.78);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) rotate(-22deg);
+        box-shadow: 0 0 8px rgba(232, 196, 120, 0.25);
+      }
+
+      .planet-minutes {
+        width: 5.8%;
+        height: 5.8%;
+        background:
+          radial-gradient(circle at 34% 30%, #e9fbff 0 14%, #7ec8d4 42%, #2d6d78 100%);
+        box-shadow:
+          0 0 14px rgba(126, 200, 212, 0.55),
+          inset -5px -6px 10px rgba(10, 40, 50, 0.3);
+      }
+
+      .planet-seconds {
+        width: 4.4%;
+        height: 4.4%;
+        background:
+          radial-gradient(circle at 34% 30%, #ffe8df 0 18%, #ff8c69 48%, #c4472a 100%);
+        box-shadow:
+          -16px 0 14px -4px rgba(255, 140, 105, 0.55),
+          0 0 12px rgba(255, 140, 105, 0.7);
+      }
+
+      .sun {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 13.5%;
+        height: 13.5%;
+        translate: -50% -50%;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 38% 34%, #fff7e4 0 18%, var(--sun) 42%, #ee9b3c 100%);
+        box-shadow:
+          0 0 28px rgba(255, 214, 160, 0.55),
+          0 0 64px rgba(238, 155, 60, 0.28);
+        z-index: 4;
+      }
+
+      .sun::after {
+        content: "";
+        position: absolute;
+        inset: -28%;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 214, 160, 0.22);
+      }
+
+      .readout {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+        width: 100%;
+      }
+
+      .chip {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.6rem;
+        padding: 0.7rem 0.85rem;
+        border: 1px solid var(--hairline);
+        border-radius: 999px;
+        background: var(--glass);
+        backdrop-filter: blur(10px);
+      }
+
+      .chip .label {
+        font-size: 0.62rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .chip .value {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.95rem;
+        letter-spacing: 0.04em;
+      }
+
+      .chip.hours .swatch {
+        background: var(--gold);
+      }
+
+      .chip.minutes .swatch {
+        background: var(--ice);
+      }
+
+      .chip.seconds .swatch {
+        background: var(--ember);
+      }
+
+      .chip .meta {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .swatch {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 50%;
+        box-shadow: 0 0 8px currentColor;
+      }
+
+      .foot {
+        margin: 0;
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        text-align: center;
+      }
+
+      @media (max-height: 720px) {
+        .stage {
+          --size: min(72vmin, 70dvh, 640px);
+        }
+      }
+
+      @media (max-width: 560px) {
+        .readout {
+          gap: 0.45rem;
+        }
+
+        .chip {
+          flex-direction: column;
+          align-items: center;
+          border-radius: 1.1rem;
+          padding: 0.65rem 0.4rem 0.7rem;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .planet-seconds {
+          box-shadow: 0 0 12px rgba(255, 140, 105, 0.7);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stars" aria-hidden="true">
+      <div class="star-layer" id="stars-far"></div>
+      <div class="star-layer" id="stars-near"></div>
+    </div>
+
+    <main class="shell">
+      <div class="stage">
+        <p class="mast">Orbit Clock</p>
+
+        <div
+          class="clock"
+          id="clock"
+          role="img"
+          aria-label="Orbital analog clock"
+        >
+          <div class="orbit orbit-hours" data-orbit="hours">
+            <div class="ring" data-ring="hours"></div>
+            <div class="ticks" data-ticks="hours"></div>
+            <div class="numerals" data-numerals="hours"></div>
+            <div class="rotor" data-rotor="hours">
+              <div class="planet planet-hours" title="Hours"></div>
+            </div>
+          </div>
+
+          <div class="orbit orbit-minutes" data-orbit="minutes">
+            <div class="ring" data-ring="minutes"></div>
+            <div class="ticks" data-ticks="minutes"></div>
+            <div class="rotor" data-rotor="minutes">
+              <div class="planet planet-minutes" title="Minutes"></div>
+            </div>
+          </div>
+
+          <div class="orbit orbit-seconds" data-orbit="seconds">
+            <div class="ring" data-ring="seconds"></div>
+            <div class="rotor" data-rotor="seconds">
+              <div class="planet planet-seconds" title="Seconds"></div>
+            </div>
+          </div>
+
+          <div class="sun" aria-hidden="true"></div>
+        </div>
+
+        <div class="readout" aria-hidden="true">
+          <div class="chip hours">
+            <span class="meta"><span class="swatch"></span><span class="label">Hours</span></span>
+            <span class="value" data-digital="hours">--</span>
+          </div>
+          <div class="chip minutes">
+            <span class="meta"><span class="swatch"></span><span class="label">Minutes</span></span>
+            <span class="value" data-digital="minutes">--</span>
+          </div>
+          <div class="chip seconds">
+            <span class="meta"><span class="swatch"></span><span class="label">Seconds</span></span>
+            <span class="value" data-digital="seconds">--</span>
+          </div>
+        </div>
+
+        <p class="foot">Local time · three orbits · no tracking</p>
+      </div>
+    </main>
+
+    <script src="orbit-time.js"></script>
+    <script>
+      (function () {
+        if (!window.OrbitTime) {
+          document.querySelector(".foot").textContent =
+            "Missing orbit-time.js — keep both files in the same folder.";
+          return;
+        }
+
+        const clock = document.getElementById("clock");
+        const rotors = {
+          hours: document.querySelector('[data-rotor="hours"]'),
+          minutes: document.querySelector('[data-rotor="minutes"]'),
+          seconds: document.querySelector('[data-rotor="seconds"]'),
+        };
+        const rings = {
+          hours: document.querySelector('[data-ring="hours"]'),
+          minutes: document.querySelector('[data-ring="minutes"]'),
+          seconds: document.querySelector('[data-ring="seconds"]'),
+        };
+        const digital = {
+          hours: document.querySelector('[data-digital="hours"]'),
+          minutes: document.querySelector('[data-digital="minutes"]'),
+          seconds: document.querySelector('[data-digital="seconds"]'),
+        };
+
+        function scatterStars(node, count, maxSize) {
+          const light = window.matchMedia("(prefers-color-scheme: light)").matches;
+          const shadows = [];
+          for (let i = 0; i < count; i += 1) {
+            const x = (Math.random() * 100).toFixed(2) + "vw";
+            const y = (Math.random() * 100).toFixed(2) + "vh";
+            const r = (Math.random() * maxSize).toFixed(2) + "px";
+            const a = (0.18 + Math.random() * 0.55).toFixed(2);
+            const color = light ? "rgba(28,23,16," : "rgba(255,255,255,";
+            shadows.push(x + " " + y + " 0 " + r + " " + color + a + ")");
+          }
+          node.style.boxShadow = shadows.join(",");
+        }
+
+        function addTicks(container, count) {
+          for (let i = 0; i < count; i += 1) {
+            const tick = document.createElement("span");
+            const major = count === 12 || i % 5 === 0;
+            tick.className = "tick" + (major ? " major" : "");
+            tick.style.transform = "rotate(" + (360 / count) * i + "deg)";
+            container.appendChild(tick);
+          }
+        }
+
+        function buildTicks() {
+          addTicks(document.querySelector('[data-ticks="hours"]'), 12);
+          addTicks(document.querySelector('[data-ticks="minutes"]'), 60);
+
+          const numerals = document.querySelector('[data-numerals="hours"]');
+          for (let n = 1; n <= 12; n += 1) {
+            const wrap = document.createElement("span");
+            wrap.className = "numeral";
+            wrap.style.transform = "rotate(" + n * 30 + "deg)";
+            const label = document.createElement("span");
+            label.textContent = String(n);
+            label.style.transform = "rotate(" + -n * 30 + "deg)";
+            wrap.appendChild(label);
+            numerals.appendChild(wrap);
+          }
+        }
+
+        function paint(now) {
+          const map = window.OrbitTime.anglesFromDate(now);
+          rotors.hours.style.transform = "rotate(" + map.hoursDeg + "deg)";
+          rotors.minutes.style.transform = "rotate(" + map.minutesDeg + "deg)";
+          rotors.seconds.style.transform = "rotate(" + map.secondsDeg + "deg)";
+          rings.hours.style.setProperty("--sweep", map.hoursDeg + "deg");
+          rings.minutes.style.setProperty("--sweep", map.minutesDeg + "deg");
+          rings.seconds.style.setProperty("--sweep", map.secondsDeg + "deg");
+          digital.hours.textContent = window.OrbitTime.pad2(map.hours24);
+          digital.minutes.textContent = window.OrbitTime.pad2(map.minutes);
+          digital.seconds.textContent = window.OrbitTime.pad2(map.seconds);
+          clock.setAttribute(
+            "aria-label",
+            "Orbital analog clock, " + map.digital + " local time. Gold ringed planet is hours, teal planet is minutes, ember spark is seconds."
+          );
+        }
+
+        function frame() {
+          paint(new Date());
+          requestAnimationFrame(frame);
+        }
+
+        scatterStars(document.getElementById("stars-far"), 70, 1.1);
+        scatterStars(document.getElementById("stars-near"), 28, 1.8);
+        buildTicks();
+        frame();
+      })();
+    </script>
+  </body>
+</html>

@@ -60,7 +60,8 @@
           radial-gradient(900px 600px at 110% 80%, rgba(20, 70, 110, 0.22), transparent 50%),
           radial-gradient(800px 500px at -10% 90%, rgba(120, 40, 50, 0.12), transparent 46%),
           var(--void);
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
       }
 
       .stars {
@@ -372,6 +373,12 @@
         color: var(--muted);
         letter-spacing: 0.04em;
         text-align: center;
+      }
+
+      @media (max-height: 720px) {
+        .stage {
+          --size: min(72vmin, 70dvh, 640px);
+        }
       }
 
       @media (max-width: 560px) {

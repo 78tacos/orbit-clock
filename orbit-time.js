@@ -19,11 +19,9 @@
    *   hoursDeg: number,
    *   minutesDeg: number,
    *   secondsDeg: number,
-   *   hours12: number,
    *   hours24: number,
    *   minutes: number,
    *   seconds: number,
-   *   milliseconds: number,
    *   digital: string,
    * }}
    */
@@ -46,11 +44,9 @@
       hoursDeg: hourFraction * 30,
       minutesDeg: minuteFraction * 6,
       secondsDeg: secondFraction * 6,
-      hours12,
       hours24,
       minutes,
       seconds,
-      milliseconds,
       digital: pad2(hours24) + ":" + pad2(minutes) + ":" + pad2(seconds),
     };
   }

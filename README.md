@@ -44,7 +44,7 @@ Then visit [http://localhost:8080](http://localhost:8080).
 
 ## GitHub Pages
 
-This is a static site at the repo root. In the GitHub repo: **Settings → Pages → Deploy from a branch**, choose `main` (or this feature branch) and `/ (root)`. Pages will serve `index.html` at `https://<user>.github.io/orbit-clock/`.
+This is a static site at the repo root. In the GitHub repo: **Settings → Pages → Deploy from a branch**, choose `main` and `/ (root)`. Pages will serve `index.html` at `https://<user>.github.io/orbit-clock/`.
 
 ## Screenshot / demo
 

@@ -1,6 +1,6 @@
 # Orbit Clock
 
-A zero-dependency **orbital analog clock** for the browser. Hours, minutes, and seconds travel as planets on three concentric rings — a small, self-contained piece you can open locally or publish on GitHub Pages.
+A zero-dependency **orbital analog clock** for the browser. Hours, minutes, and seconds travel as planets on three concentric rings. Open it locally, or publish it on GitHub Pages.
 
 No build step. No CDN. No tracking. Works offline.
 
@@ -16,7 +16,7 @@ No build step. No CDN. No tracking. Works offline.
 | Middle | Teal ice planet | **Minutes** (60-tick ring) |
 | Inner | Ember spark | **Seconds** (smooth, including milliseconds) |
 
-12 sits at the top. Motion is clockwise, like a conventional analog clock. Each ring fills as a faint sweep so the current position is readable at a glance. A compact Hours / Minutes / Seconds readout under the face mirrors the live time.
+12 sits at the top. Motion is clockwise, like a conventional analog clock. Each ring fills as a faint sweep up to the planet, and the readout under the face shows hours, minutes, and seconds.
 
 ## Open it
 
@@ -44,15 +44,15 @@ Then visit [http://localhost:8080](http://localhost:8080).
 
 ## GitHub Pages
 
-This is a static site at the repo root. In the GitHub repo: **Settings → Pages → Deploy from a branch**, choose `main` (or this feature branch) and `/ (root)`. Pages will serve `index.html` at `https://<user>.github.io/orbit-clock/`.
+This is a static site at the repo root. In the GitHub repo: **Settings → Pages → Deploy from a branch**, choose `main` and `/ (root)`. Pages will serve `index.html` at `https://<user>.github.io/orbit-clock/`.
 
 ## Screenshot / demo
 
-Open `index.html`, wait a second so the second planet is moving, then capture the window. `preview.png` is a still of the live clock.
+`preview.png` is a still of the live clock.
 
 ## Tests
 
-A tiny Node smoke check (no install, no extra packages):
+No install. Uses Node's built-in test runner:
 
 ```bash
 npm test
@@ -64,7 +64,7 @@ or:
 node --test test/smoke.test.mjs
 ```
 
-It asserts the analog angle mapping (12/3/6/9, minute and second ticks, hour contribution from minutes) and that `index.html` contains the three orbits without CDN URLs.
+They check the analog angles, and that `index.html` contains the three orbits and no CDN URLs.
 
 ## License
 

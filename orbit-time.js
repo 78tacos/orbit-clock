@@ -1,6 +1,5 @@
 /**
- * Analog-orbit time mapping. Shared by the clock and smoke tests.
- * Angles are clockwise degrees with 12 o'clock as 0.
+ * Analog angles, clockwise from 12 o'clock.
  */
 (function (root, factory) {
   const api = factory();
